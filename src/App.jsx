@@ -854,14 +854,7 @@ const ECGGraph = ({ rhythmId, isRunning = true }) => {
 export default function CardioLearn() {
   const [view, setView] = useState('learn'); 
   const [activeRhythm, setActiveRhythm] = useState('NSR');
-  const [quizState, setQuizState] = useState({ 
-    currentAnswer: null, 
-    score: 0, 
-    total: 0, 
-    targetRhythm: null, 
-    choices: [], // Track the 4 choices
-    showResult: false 
-  });
+  const [quizState, setQuizState] = useState({ currentAnswer: null, score: 0, total: 0, targetRhythm: null, showResult: false, choices: [] });
   const [lang, setLang] = useState('en'); 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
@@ -887,22 +880,19 @@ export default function CardioLearn() {
 
   const startQuizRound = () => {
     const keys = Object.keys(RHYTHMS);
-    // 1. Pick target
-    const targetKey = keys[Math.floor(Math.random() * keys.length)];
+    const randomKey = keys[Math.floor(Math.random() * keys.length)];
     
-    // 2. Pick 3 distractors
-    const otherKeys = keys.filter(k => k !== targetKey);
-    const shuffledOthers = otherKeys.sort(() => 0.5 - Math.random());
-    const distractors = shuffledOthers.slice(0, 3);
-    
-    // 3. Combine & Shuffle
-    const choices = [targetKey, ...distractors].sort(() => 0.5 - Math.random());
+    // Generate distractors
+    const otherKeys = keys.filter(k => k !== randomKey);
+    const shuffled = otherKeys.sort(() => 0.5 - Math.random());
+    const distractors = shuffled.slice(0, 3);
+    const choices = [randomKey, ...distractors].sort(() => 0.5 - Math.random());
 
     setQuizState(prev => ({ 
       ...prev, 
       currentAnswer: null, 
-      targetRhythm: targetKey, 
-      choices: choices, // Store choices
+      targetRhythm: randomKey, 
+      choices: choices,
       showResult: false 
     }));
   };
@@ -949,7 +939,6 @@ export default function CardioLearn() {
            >
              {lang === 'en' ? (
                <>
-                 {/* UK Flag SVG */}
                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" width="30" height="15">
                     <clipPath id="t">
                       <path d="M30,15h30v15zv15h-30zh-30v-15zv-15h30z"/>
@@ -964,7 +953,6 @@ export default function CardioLearn() {
                </>
              ) : (
                <>
-                {/* Georgia Flag SVG */}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" width="30" height="20">
                   <rect width="60" height="40" fill="#fff"/>
                   <rect x="26" width="8" height="40" fill="#f00"/>
