@@ -621,7 +621,7 @@ const ECGGraph = ({ rhythmId, isRunning = true }) => {
     let points = [];
     let x = 0;
     const X_STEP = 2; 
-    const TOTAL_STEPS = 1000; 
+    const TOTAL_STEPS = 10000; // FIXED: Increased for better scrolling
 
     // --- VENTRICULAR FIBRILLATION GENERATOR ---
     if (rhythmId === 'VFIB') {
@@ -939,6 +939,7 @@ export default function CardioLearn() {
            >
              {lang === 'en' ? (
                <>
+                 {/* UK Flag SVG */}
                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" width="30" height="15">
                     <clipPath id="t">
                       <path d="M30,15h30v15zv15h-30zh-30v-15zv-15h30z"/>
@@ -953,6 +954,7 @@ export default function CardioLearn() {
                </>
              ) : (
                <>
+                {/* Georgia Flag SVG */}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" width="30" height="20">
                   <rect width="60" height="40" fill="#fff"/>
                   <rect x="26" width="8" height="40" fill="#f00"/>
