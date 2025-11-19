@@ -10,7 +10,9 @@ import {
   RefreshCw,
   Stethoscope,
   Globe,
-  Download
+  Download,
+  Play,
+  Pause
 } from 'lucide-react';
 
 /**
@@ -621,7 +623,7 @@ const ECGGraph = ({ rhythmId, isRunning = true }) => {
     let points = [];
     let x = 0;
     const X_STEP = 2; 
-    const TOTAL_STEPS = 10000; // FIXED: Increased for better scrolling
+    const TOTAL_STEPS = 10000; 
 
     // --- VENTRICULAR FIBRILLATION GENERATOR ---
     if (rhythmId === 'VFIB') {
@@ -857,6 +859,7 @@ export default function CardioLearn() {
   const [quizState, setQuizState] = useState({ currentAnswer: null, score: 0, total: 0, targetRhythm: null, showResult: false, choices: [] });
   const [lang, setLang] = useState('en'); 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isPaused, setIsPaused] = useState(false);
 
   const t = TRANSLATIONS[lang]; 
 
@@ -895,6 +898,7 @@ export default function CardioLearn() {
       choices: choices,
       showResult: false 
     }));
+    setIsPaused(false);
   };
 
   const handleAnswer = (rhythmId) => {
@@ -939,7 +943,6 @@ export default function CardioLearn() {
            >
              {lang === 'en' ? (
                <>
-                 {/* UK Flag SVG */}
                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" width="30" height="15">
                     <clipPath id="t">
                       <path d="M30,15h30v15zv15h-30zh-30v-15zv-15h30z"/>
@@ -954,7 +957,6 @@ export default function CardioLearn() {
                </>
              ) : (
                <>
-                {/* Georgia Flag SVG */}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" width="30" height="20">
                   <rect width="60" height="40" fill="#fff"/>
                   <rect x="26" width="8" height="40" fill="#f00"/>
@@ -999,13 +1001,22 @@ export default function CardioLearn() {
             <div className="flex-1 overflow-y-auto bg-white">
               <div className="sticky top-0 z-10 bg-white shadow-sm">
                 <div className="px-6 py-4 flex justify-between items-end">
-                  <div>
-                    <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">{t[activeRhythm]?.name || RHYTHMS[activeRhythm].name}</h2>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">{t.hr}: {RHYTHMS[activeRhythm].rate}</span>
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">{t[activeRhythm]?.name || RHYTHMS[activeRhythm].name}</h2>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">{t.hr}: {RHYTHMS[activeRhythm].rate}</span>
+                    </div>
+                    <button 
+                      onClick={() => setIsPaused(!isPaused)}
+                      className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors text-slate-700"
+                      title={isPaused ? "Play" : "Pause"}
+                    >
+                      {isPaused ? <Play size={24} fill="currentColor" /> : <Pause size={24} fill="currentColor" />}
+                    </button>
                   </div>
                   <div className="text-xs text-slate-400 font-mono">{t.leadII}</div>
                 </div>
-                <ECGGraph rhythmId={activeRhythm} />
+                <ECGGraph rhythmId={activeRhythm} isRunning={!isPaused} />
               </div>
               <div className="p-6 max-w-4xl mx-auto space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1052,9 +1063,19 @@ export default function CardioLearn() {
               </div>
               <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200 mb-8">
                 <div className="bg-slate-900 text-green-400 px-4 py-2 flex justify-between items-center font-mono text-xs">
-                  <span>{t.hr}: ---</span> <span>25mm/s</span>
+                  <div className="flex items-center gap-4">
+                    <span>{t.hr}: {quizState.targetRhythm ? RHYTHMS[quizState.targetRhythm].rate : '---'}</span>
+                    <button 
+                      onClick={() => setIsPaused(!isPaused)}
+                      className="p-1 rounded hover:bg-slate-800 transition-colors text-green-400"
+                      title={isPaused ? "Play" : "Pause"}
+                    >
+                      {isPaused ? <Play size={14} fill="currentColor" /> : <Pause size={14} fill="currentColor" />}
+                    </button>
+                  </div>
+                  <span>25mm/s</span>
                 </div>
-                {quizState.targetRhythm && <ECGGraph rhythmId={quizState.targetRhythm} isRunning={!quizState.showResult} />}
+                {quizState.targetRhythm && <ECGGraph rhythmId={quizState.targetRhythm} isRunning={!quizState.showResult && !isPaused} />}
                 <div className="bg-slate-100 px-4 py-2 text-xs text-center text-slate-500">{t.analyze}</div>
               </div>
               {!quizState.showResult ? (
