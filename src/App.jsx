@@ -210,8 +210,7 @@ const TRANSLATIONS = {
       reg: "Regular", p: "Dissociated", qrs: "Wide"
     }
   },
-  
-ka: {
+  ka: {
     appTitle: "CardioLearn",
     edition: "სტუდენტური გამოცემა",
     studyMode: "სწავლის რეჟიმი",
@@ -400,6 +399,7 @@ ka: {
       reg: "რეგულარული", p: "დისოცირებული", qrs: "განიერი"
     }
   }
+};
 
 // ... (SEGMENTS and RHYTHMS - Unchanged, ensure you keep the previous definitions) ...
 const P_WAVE_NORMAL = [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0];
