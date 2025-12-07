@@ -22,13 +22,12 @@ import {
   Heart
 } from 'lucide-react';
 
-// --- Constants (Moved to function scope to avoid reference errors) ---
+// --- Constants ---
 const DEFAULT_CANVAS_WIDTH = 800;
 const DEFAULT_CANVAS_HEIGHT = 200;
+const BASELINE_Y = DEFAULT_CANVAS_HEIGHT / 2;
 
-/**
- * LOCALIZATION & TEXT DATA
- */
+// --- TRANSLATIONS (Unchanged) ---
 const TRANSLATIONS = {
   en: {
     appTitle: "CardioLearn",
@@ -36,7 +35,7 @@ const TRANSLATIONS = {
     studyMode: "Study Mode",
     quizMode: "Quiz Mode",
     compareMode: "ECG Comparison",
-    simulatorMode: "Live Simulator", // New Tab
+    simulatorMode: "Live Simulator", 
     installApp: "Install App",
     selectCondition: "Select Condition",
     quickTipTitle: "Quick Tip",
@@ -63,8 +62,6 @@ const TRANSLATIONS = {
     rhythmB: "Rhythm B",
     baseline: "Baseline (NSR)",
     controls: "Rhythm Controls",
-    
-    // Simulation Specific
     liveView: "LIVE VIEW",
     scroll: "Scroll:",
     pattern: "Pattern",
@@ -77,16 +74,12 @@ const TRANSLATIONS = {
     prematureControls: "Premature Controls",
     slow: "Slow",
     fast: "Fast",
-    
-    // Phases
     p_wave: "Atrial Contraction",
     pr_segment: "AV Delay (Filling)",
     qrs: "Ventricular Contraction",
     st_segment: "Ventricles Emptying",
     t_wave: "Repolarization",
     rest: "Diastole (Relaxation)",
-    
-    // Patterns
     random: "Random",
     bigeminy: "Bigeminy",
     trigeminy: "Trigeminy",
@@ -102,7 +95,7 @@ const TRANSLATIONS = {
     studyMode: "სწავლის რეჟიმი",
     quizMode: "ტესტირების რეჟიმი",
     compareMode: "ECG შედარება",
-    simulatorMode: "ლაივ სიმულატორი", // New Tab
+    simulatorMode: "ლაივ სიმულატორი", 
     installApp: "აპლიკაციის დაყენება",
     selectCondition: "აირჩიეთ მდგომარეობა",
     quickTipTitle: "სწრაფი რჩევა",
@@ -129,8 +122,6 @@ const TRANSLATIONS = {
     rhythmB: "რიტმი B",
     baseline: "ნორმა (NSR)",
     controls: "რიტმის კონტროლი",
-    
-    // Simulation Specific
     liveView: "ლაივ რეჟიმი",
     scroll: "სიჩქარე:",
     pattern: "პატერნი",
@@ -143,16 +134,12 @@ const TRANSLATIONS = {
     prematureControls: "ექსტრასისტოლის კონტროლი",
     slow: "ნელა",
     fast: "სწრაფად",
-
-    // Phases
     p_wave: "წინაგულების შეკუმშვა",
     pr_segment: "AV დაყოვნება (შევსება)",
     qrs: "პარკუჭების შეკუმშვა",
     st_segment: "პარკუჭების დაცლა",
     t_wave: "რეპოლარიზაცია",
     rest: "დიასტოლა (მოდუნება)",
-
-    // Patterns
     random: "შემთხვევითი",
     bigeminy: "ბიგემინია",
     trigeminy: "ტრიგემინია",
@@ -164,214 +151,7 @@ const TRANSLATIONS = {
   }
 };
 
-// --- RHYTHM DEFINITIONS ---
-const RHYTHMS = {
-  NSR: {
-    id: 'NSR',
-    name_en: "Normal Sinus Rhythm", name_ka: "ნორმალური სინუსური რიტმი",
-    bpm: 70,
-    desc_en: "Normal electrical activity. Impulse starts in SA node, travels to AV node, then ventricles.",
-    desc_ka: "ნორმალური ელექტრული აქტივობა. იმპულსი იწყება SA კვანძში, გადადის AV კვანძში, შემდეგ პარკუჭებში.",
-    mgmt_en: "None required.", mgmt_ka: "არ მოითხოვს ჩარევას.",
-    regular: true, hasP: true, qrsWidth: 1,
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 0, 0, -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], 
-    interval: 40, randomness: 2, noise: 0 
-  },
-  SB: {
-    id: 'SB',
-    name_en: "Sinus Bradycardia", name_ka: "სინუსური ბრადიკარდია",
-    bpm: 45,
-    desc_en: "Normal rhythm but slow (<60 BPM).", desc_ka: "ნორმალური რიტმი, თუმცა შენელებული (<60 დარტყმა/წთ).",
-    mgmt_en: "Monitor. Atropine/Pacing if symptomatic.", mgmt_ka: "მონიტორინგი. ატროპინი/პეისმეიკერი თუ სიმპტომურია.",
-    regular: true, hasP: true, qrsWidth: 1,
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 0, 0, -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], 
-    interval: 90, randomness: 2, noise: 0 
-  },
-  ST: {
-    id: 'ST',
-    name_en: "Sinus Tachycardia", name_ka: "სინუსური ტაქიკარდია",
-    bpm: 120,
-    desc_en: "Normal rhythm but fast (>100 BPM).", desc_ka: "ნორმალური რიტმი, თუმცა აჩქარებული (>100 დარტყმა/წთ).",
-    mgmt_en: "Treat underlying cause (pain, fever, hypovolemia).", mgmt_ka: "გამომწვევი მიზეზის მკურნალობა (ტკივილი, ცხელება, ჰიპოვოლემია).",
-    regular: true, hasP: true, qrsWidth: 1,
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 0, 0, -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], 
-    interval: 15, randomness: 1, noise: 0 
-  },
-  VFIB: {
-    id: 'VFIB',
-    name_en: "Ventricular Fibrillation", name_ka: "პარკუჭოვანი ფიბრილაცია",
-    bpm: 300, 
-    desc_en: "Chaotic, irregular deflections. Ventricles quiver.", desc_ka: "ქაოტური, არარეგულარული გადახრები. პარკუჭები თრთის შეკუმშვის ნაცვლად.",
-    mgmt_en: "CRITICAL. Immediate CPR and Defibrillation. Fatal if untreated.", mgmt_ka: "კრიტიკული. სასწრაფო CPR და დეფიბრილაცია. ფატალურია თუ არ უმკურნალეთ.",
-    type: 'chaos',
-    beatShape: null, interval: 0, randomness: 0, noise: 0 
-  },
-  AFLUT: {
-    id: 'AFLUT',
-    name_en: "Atrial Flutter", name_ka: "წინაგულთა თრთოლვა",
-    bpm: 150, 
-    desc_en: "Macro-reentry in RA. Saw-tooth 'F' waves.", desc_ka: "მაკრო-რიენტრის წრედი მარჯვენა წინაგულში. დამახასიათებელი 'ხერხის კბილისებრი' თრთოლვის ტალღები.",
-    mgmt_en: "Rate control (BB/CCB), Cardioversion/Ablation. Anticoagulation.", mgmt_ka: "სიხშირის კონტროლი (BB/CCB), კარდიოვერსია/აბლაცია. ანტიკოაგულაცია.",
-    regular: true, flutter: true, qrsWidth: 1,
-    beatShape: null, interval: 25, randomness: 0, noise: 0 
-  },
-  AFIB: {
-    id: 'AFIB',
-    name_en: "Atrial Fibrillation", name_ka: "წინაგულთა ფიბრილაცია",
-    bpm: 130, 
-    desc_en: "Irregularly irregular. No distinct P waves, replaced by chaotic fibrillatory waves.", desc_ka: "არარეგულარულად არარეგულარული. P ტალღები არ ჩანს, ჩანაცვლებულია ქაოტური ფიბრილაციური ტალღებით.",
-    mgmt_en: "Rate control (BB, CCB, Digoxin). Anticoagulation. Rhythm control if unstable.", mgmt_ka: "სიხშირის კონტროლი (BB, CCB, დიგოქსინი). ანტიკოაგულაცია. რიტმის კონტროლი თუ არასტაბილურია.",
-    regular: false, hasP: false, qrsWidth: 1,
-    beatShape: [0, 0, -2, 35, -8, 0, 0, 0.5, 1, 3, 5, 6, 5, 3, 1, 0], interval: 35, randomness: 40, noise: 1.5 
-  },
-  VT: {
-    id: 'VT',
-    name_en: "Ventricular Tachycardia", name_ka: "პარკუჭოვანი ტაქიკარდია",
-    bpm: 160,
-    desc_en: "Wide complex tachycardia originating in ventricles. AV dissociation often present.", desc_ka: "ფართო კომპლექსოვანი ტაქიკარდია პარკუჭებიდან. ხშირია AV დისოციაცია.",
-    mgmt_en: "Pulse? Cardioversion. No Pulse? Defibrillation + CPR (ACLS). Stable? Amiodarone.", mgmt_ka: "პულსი არის? კარდიოვერსია. პულსი არაა? დეფიბრილაცია + CPR. სტაბილური? ამიოდარონი.",
-    regular: true, hasP: false, qrsWidth: 2.5, 
-    beatShape: [0, 5, 10, 20, 35, 20, 0, -15, -25, -15, -5], interval: 10, randomness: 2, noise: 0.5 
-  },
-  WPW: {
-    id: 'WPW',
-    name_en: "Wolff-Parkinson-White", name_ka: "ვოლფ-პარკინსონ-უაიტი",
-    bpm: 70,
-    desc_en: "Accessory pathway (Bundle of Kent). Short PR, Delta Wave, Wide QRS.", desc_ka: "დამატებითი გზა (კენტის კონა). მოკლე PR, დელტა ტალღა.",
-    mgmt_en: "Risk of SVT/Afib. Avoid AV blockers (Adenosine, BB, CCB, Digoxin). Ablation curative.", mgmt_ka: "SVT/Afib-ის რისკი. მოერიდეთ AV კვანძის ბლოკერებს (ABCD). აბლაცია კურნავს.",
-    regular: true, hasP: true, deltaWave: true, kent: true, qrsWidth: 1.5,
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 2, 5, 10, 25, 40, 15, -10, -2, -1, 0, 1, 2, 3, 2, 1, 0], interval: 40, randomness: 2, noise: 0 
-  },
-  PVC_MONO: {
-    id: 'PVC_MONO',
-    name_en: "PVC (Monomorphic)", name_ka: "PVC (მონომორფული)",
-    bpm: 70,
-    desc_en: "Normal rhythm with occasional wide, bizarre ventricular beats.", desc_ka: "ნორმალური რიტმი დროგამოშვებითი ფართო, უცნაური პარკუჭოვანი დარტყმებით.",
-    mgmt_en: "Treat underlying cause (electrolytes, hypoxia).", mgmt_ka: "გამომწვევი მიზეზის მკურნალობა (ელექტროლიტები, ჰიპოქსია).",
-    ectopic: 'ventricle', hasP: true, premature: true, qrsWidth: 1, 
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 0, 0, -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], interval: 40, randomness: 1, noise: 0 
-  },
-  PVC_POLY: {
-    id: 'PVC_POLY',
-    name_en: "PVC (Polymorphic)", name_ka: "PVC (პოლიმორფული)",
-    bpm: 70,
-    desc_en: "Normal rhythm with PVCs of varying shapes (multifocal).", desc_ka: "ნორმალური რიტმი სხვადასხვა ფორმის PVC-ებით (მულტიფოკალური).",
-    mgmt_en: "Suggests instability. Check K+, Mg+. Risk of R-on-T.", mgmt_ka: "მიუთითებს არასტაბილურობაზე. შეამოწმეთ K+, Mg+. R-on-T რისკი.",
-    ectopic: 'ventricle_poly', hasP: true, premature: true, qrsWidth: 1,
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 0, 0, -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], interval: 40, randomness: 1, noise: 0 
-  },
-  PAC_HIGH: {
-    id: 'PAC_HIGH',
-    name_en: "PAC (High Atrium)", name_ka: "PAC (მაღალი წინაგული)",
-    bpm: 70,
-    desc_en: "Normal rhythm with occasional early beats from high atrium.", desc_ka: "ნორმალური რიტმი დროგამოშვებითი ადრეული დარტყმებით მაღალი წინაგულიდან.",
-    mgmt_en: "Benign. Reduce triggers (caffeine, stress).", mgmt_ka: "კეთილთვისებიანი. შეამცირეთ ტრიგერები (კოფეინი, სტრესი).",
-    ectopic: 'high_atrium', hasP: true, premature: true, qrsWidth: 1,
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 0, 0, -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], interval: 40, randomness: 1, noise: 0 
-  },
-  PAC_MID: {
-    id: 'PAC_MID',
-    name_en: "PAC (Mid Atrium)", name_ka: "PAC (შუა წინაგული)",
-    bpm: 70,
-    desc_en: "Normal rhythm with occasional early beats from mid atrium.", desc_ka: "ნორმალური რიტმი ადრეული დარტყმებით შუა წინაგულიდან.",
-    mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.",
-    ectopic: 'mid_atrium', hasP: true, premature: true, qrsWidth: 1,
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 0, 0, -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], interval: 40, randomness: 1, noise: 0 
-  },
-  PAC_LOW: {
-    id: 'PAC_LOW',
-    name_en: "PAC (Low Atrium)", name_ka: "PAC (დაბალი წინაგული)",
-    bpm: 70,
-    desc_en: "Normal rhythm with occasional early beats from low atrium.", desc_ka: "ნორმალური რიტმი ადრეული დარტყმებით დაბალი წინაგულიდან.",
-    mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.",
-    ectopic: 'low_atrium', hasP: true, premature: true, qrsWidth: 1,
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 0, 0, -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], interval: 40, randomness: 1, noise: 0 
-  },
-  LBBB: {
-    id: 'LBBB',
-    name_en: "Left Bundle Branch Block", name_ka: "ჰისის მარცხენა ფეხის ბლოკადა (LBBB)",
-    bpm: 70,
-    desc_en: "Block in left bundle. Wide, notched ('M') R in lateral leads.", desc_ka: "ბლოკადა მარცხენა ფეხში. ფართო, ორკუზიანი ('M') R ტალღა ლატერალურ განხრებში.",
-    mgmt_en: "New LBBB + Chest Pain = STEMI equivalent (Sgarbossa Criteria).", mgmt_ka: "ახალი LBBB + ტკივილი მკერდში = STEMI ეკვივალენტი (სგარბოსას კრიტერიუმები).",
-    sgarbossa_en: "Concordant STE ≥1mm; Concordant depression ≥1mm V1-V3; Excessive discordant STE.", sgarbossa_ka: "კონკორდატული STE ≥1მმ; კონკორდატული დეპრესია ≥1მმ V1-V3; ჭარბი დისკორდატული STE.",
-    regular: true, hasP: true, qrsWidth: 2.5, morphology: 'notched', delay: 'left',
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 0, 0, -2, 15, 32, 25, 38, 20, -5, -3, -4, -6, -8, -9, -8, -6, -4, -2, 0], interval: 40, randomness: 2, noise: 0 
-  },
-  RBBB: {
-    id: 'RBBB',
-    name_en: "Right Bundle Branch Block", name_ka: "ჰისის მარჯვენა ფეხის ბლოკადა (RBBB)",
-    bpm: 70,
-    desc_en: "Block in right bundle. RSR' ('M') pattern in V1.", desc_ka: "ბლოკადა მარჯვენა ფეხში. RSR' ('M') პატერნი V1-ში.",
-    mgmt_en: "Normal variant or RV strain (PE, Cor Pulmonale).", mgmt_ka: "ნორმის ვარიანტი ან მარჯვენა პარკუჭის გადაძაბვა (PE, Cor Pulmonale).",
-    regular: true, hasP: true, qrsWidth: 2.5, morphology: 'rsr', delay: 'right',
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 0, 0, 5, -15, 35, -10, -2, -4, -6, -5, -3, -1, 0], interval: 40, randomness: 2, noise: 0 
-  },
-  AV1: {
-    id: 'AV1',
-    name_en: "1st Degree AV Block", name_ka: "I ხარისხის AV ბლოკადა",
-    bpm: 70,
-    desc_en: "Fixed PR prolongation (>0.20s).", desc_ka: "ფიქსირებული PR გახანგრძლივება (>0.20წმ).",
-    mgmt_en: "Benign. Monitor.", mgmt_ka: "კეთილთვისებიანი. მონიტორინგი.",
-    regular: true, hasP: true, prLong: true, qrsWidth: 1,
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, ...Array(12).fill(0), -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], interval: 40, randomness: 1, noise: 0 
-  },
-  AV2_1: {
-    id: 'AV2_1',
-    name_en: "2nd Degree AV Block (Type I)", name_ka: "II ხარისხის AV ბლოკადა (ტიპი 1)",
-    bpm: 70,
-    desc_en: "Wenckebach. Progressive PR lengthening until drop.", desc_ka: "ვენკებახი. PR-ის პროგრესული გახანგრძლივება კომპლექსის ჩავარდნამდე.",
-    mgmt_en: "Often benign (vagal tone, drugs).", mgmt_ka: "ხშირად კეთილთვისებიანი (ვაგუსი, მედიკამენტები).",
-    type: 'wenckebach', hasP: true, qrsWidth: 1,
-    beatShape: null, interval: 35, randomness: 1, noise: 0 
-  },
-  AV2_2: {
-    id: 'AV2_2',
-    name_en: "2nd Degree AV Block (Type II)", name_ka: "II ხარისხის AV ბლოკადა (ტიპი 2)",
-    bpm: 60,
-    desc_en: "Mobitz II. Random drops without PR lengthening.", desc_ka: "მობიტც II. შემთხვევითი ჩავარდნები PR-ის გახანგრძლივების გარეშე.",
-    mgmt_en: "High risk of Complete Block. Pacemaker indicated.", mgmt_ka: "სრული ბლოკადის განვითარების მაღალი რისკი. ჩვეულებრივ საჭიროა პეისმეიკერი.",
-    type: 'mobitz2', hasP: true, qrsWidth: 1,
-    beatShape: null, interval: 35, randomness: 0.5, noise: 0 
-  },
-  AV3: {
-    id: 'AV3',
-    name_en: "3rd Degree AV Block", name_ka: "III ხარისხის AV ბლოკადა",
-    bpm: 40, 
-    desc_en: "Complete Heart Block. AV dissociation.", desc_ka: "გულის სრული ბლოკადა. AV დისოციაცია.",
-    mgmt_en: "Medical emergency. Pacemaker required.", mgmt_ka: "სამედიცინო გადაუდებელი მდგომარეობა. საჭიროა პეისმეიკერი.",
-    type: 'complete_block', qrsWidth: 2.5, 
-    beatShape: null, interval: 0, randomness: 0, noise: 0 
-  },
-  SSS: {
-    id: 'SSS',
-    name_en: "Sick Sinus Syndrome", name_ka: "სინუსის სისუსტის სინდრომი",
-    bpm: 60, 
-    desc_en: "SA node dysfunction. Tachy-brady syndrome, pauses.", desc_ka: "SA კვანძის დისფუნქცია. ტაქი-ბრადი სინდრომი, პაუზები.",
-    mgmt_en: "Pacemaker for brady, meds for tachy.", mgmt_ka: "პეისმეიკერი ბრადიკარდიისთვის, მედიკამენტები ტაქიკარდიისთვის.",
-    type: 'sss', hasP: true, qrsWidth: 1,
-    beatShape: [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0, 0, 0, 0, -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], interval: 40, randomness: 2, noise: 0 
-  },
-  LAH: {
-    id: 'LAH',
-    name_en: "Left Atrial Hypertrophy", name_ka: "მარცხენა წინაგულის ჰიპერტროფია",
-    bpm: 70,
-    desc_en: "P Mitrale. Wide, notched P-wave.", desc_ka: "P Mitrale. ფართო, ორკუზიანი P-ტალღა.",
-    mgmt_en: "Treat underlying cause (HTN, Valves).", mgmt_ka: "გამომწვევი მიზეზის მკურნალობა (წნევა, სარქველები).",
-    regular: true, hasP: true, pMorph: 'bifid', qrsWidth: 1, delay: 'left_atrium',
-    beatShape: [0, 0.5, 1.5, 2.5, 3, 2.2, 2, 2.2, 3, 2.5, 1.5, 0.5, 0, 0, 0, -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], interval: 40, randomness: 2, noise: 0 
-  },
-  RAH: {
-    id: 'RAH',
-    name_en: "Right Atrial Hypertrophy", name_ka: "მარჯვენა წინაგულის ჰიპერტროფია",
-    bpm: 70,
-    desc_en: "P Pulmonale. Tall P-wave.", desc_ka: "P Pulmonale. მაღალი P-ტალღა.",
-    mgmt_en: "Treat pulmonary cause (COPD, Pulm HTN).", mgmt_ka: "ფილტვისმიერი მიზეზის მკურნალობა (COPD, პულმ. ჰიპერტენზია).",
-    regular: true, hasP: true, pMorph: 'peaked', qrsWidth: 1, force: 'right_atrium',
-    beatShape: [0, 2, 4, 6, 7.5, 6, 4, 2, 0, 0, 0, 0, -2, 35, -8, 0, 0, 0, 0, 0.5, 1, 2, 3, 5, 6, 6.5, 6, 5, 3, 2, 1, 0.5, 0], interval: 40, randomness: 2, noise: 0 
-  },
-};
-
-// ... (SEGMENTS - Unchanged) ...
+// --- SEGMENTS ---
 const P_WAVE_NORMAL = [0, 1, 2, 2.5, 3, 2.5, 2, 1, 0];
 const P_WAVE_M_SHAPE = [0, 0.5, 1.5, 2.5, 3, 2.2, 2, 2.2, 3, 2.5, 1.5, 0.5, 0];
 const P_WAVE_TALL = [0, 2, 4, 6, 7.5, 6, 4, 2, 0];
@@ -395,6 +175,33 @@ const AVB1_COMPLEX = [...P_WAVE_NORMAL, ...Array(12).fill(0), ...QRS_T_NORMAL];
 const VTACH_COMPLEX = [0, 5, 10, 20, 35, 20, 0, -15, -25, -15, -5];
 const AFIB_COMPLEX = [0, 0, -2, 35, -8, 0, 0, 0.5, 1, 3, 5, 6, 5, 3, 1, 0];
 
+
+// --- RHYTHM DEFINITIONS ---
+const RHYTHMS = {
+  NSR: { id: 'NSR', name_en: "Normal Sinus Rhythm", name_ka: "ნორმალური სინუსური რიტმი", bpm: 70, desc_en: "Normal electrical activity.", desc_ka: "ნორმალური ელექტრული აქტივობა.", mgmt_en: "None.", mgmt_ka: "არ მოითხოვს ჩარევას.", regular: true, hasP: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 40, randomness: 2, noise: 0 },
+  SB: { id: 'SB', name_en: "Sinus Bradycardia", name_ka: "სინუსური ბრადიკარდია", bpm: 45, desc_en: "Normal rhythm < 60 bpm.", desc_ka: "ნორმალური რიტმი < 60.", mgmt_en: "Monitor.", mgmt_ka: "მონიტორინგი.", regular: true, hasP: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 90, randomness: 2, noise: 0 },
+  ST: { id: 'ST', name_en: "Sinus Tachycardia", name_ka: "სინუსური ტაქიკარდია", bpm: 120, desc_en: "Normal rhythm > 100 bpm.", desc_ka: "ნორმალური რიტმი > 100.", mgmt_en: "Treat cause.", mgmt_ka: "მიზეზის მკურნალობა.", regular: true, hasP: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 15, randomness: 1, noise: 0 },
+  VFIB: { id: 'VFIB', name_en: "Ventricular Fibrillation", name_ka: "პარკუჭოვანი ფიბრილაცია", bpm: 300, desc_en: "Chaotic.", desc_ka: "ქაოტური.", mgmt_en: "Defibrillation.", mgmt_ka: "დეფიბრილაცია.", type: 'chaos', beatShape: null, interval: 0, randomness: 0, noise: 0 },
+  AFLUT: { id: 'AFLUT', name_en: "Atrial Flutter", name_ka: "წინაგულთა თრთოლვა", bpm: 150, desc_en: "Saw-tooth waves.", desc_ka: "ხერხისებრი ტალღები.", mgmt_en: "Rate control.", mgmt_ka: "სიხშირის კონტროლი.", regular: true, flutter: true, qrsWidth: 1, beatShape: null, interval: 25, randomness: 0, noise: 0 },
+  AFIB: { id: 'AFIB', name_en: "Atrial Fibrillation", name_ka: "წინაგულთა ფიბრილაცია", bpm: 130, desc_en: "Irregularly irregular.", desc_ka: "არარეგულარულად არარეგულარული.", mgmt_en: "Rate control/Anticoag.", mgmt_ka: "სიხშირის კონტროლი/ანტიკოაგ.", regular: false, hasP: false, qrsWidth: 1, beatShape: AFIB_COMPLEX, interval: 35, randomness: 40, noise: 1.5 },
+  VT: { id: 'VT', name_en: "Ventricular Tachycardia", name_ka: "პარკუჭოვანი ტაქიკარდია", bpm: 160, desc_en: "Wide complex tachy.", desc_ka: "განიერკომპლექსიანი ტაქი.", mgmt_en: "Cardiovert/Defib.", mgmt_ka: "კარდიოვერსია/დეფიბ.", regular: true, hasP: false, qrsWidth: 2.5, beatShape: VTACH_COMPLEX, interval: 10, randomness: 2, noise: 0.5 },
+  WPW: { id: 'WPW', name_en: "Wolff-Parkinson-White", name_ka: "ვოლფ-პარკინსონ-უაიტი", bpm: 70, desc_en: "Delta wave.", desc_ka: "დელტა ტალღა.", mgmt_en: "Ablation.", mgmt_ka: "აბლაცია.", regular: true, hasP: true, deltaWave: true, kent: true, qrsWidth: 1.5, beatShape: WPW_COMPLEX, interval: 40, randomness: 2, noise: 0 },
+  PVC_MONO: { id: 'PVC_MONO', name_en: "PVC (Monomorphic)", name_ka: "PVC (მონომორფული)", bpm: 70, desc_en: "Wide ectopic beat.", desc_ka: "განიერი ექტოპიური დარტყმა.", mgmt_en: "Monitor.", mgmt_ka: "მონიტორინგი.", ectopic: 'ventricle', hasP: true, premature: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 40, randomness: 1, noise: 0 },
+  PVC_POLY: { id: 'PVC_POLY', name_en: "PVC (Polymorphic)", name_ka: "PVC (პოლიმორფული)", bpm: 70, desc_en: "Multifocal PVCs.", desc_ka: "მულტიფოკალური PVC.", mgmt_en: "Check lytes.", mgmt_ka: "ელექტროლიტები.", ectopic: 'ventricle_poly', hasP: true, premature: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 40, randomness: 1, noise: 0 },
+  PAC_HIGH: { id: 'PAC_HIGH', name_en: "PAC (High Atrium)", name_ka: "PAC (მაღალი წინაგული)", bpm: 70, desc_en: "Early upright P.", desc_ka: "ადრეული დადებითი P.", mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.", ectopic: 'high_atrium', hasP: true, premature: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 40, randomness: 1, noise: 0 },
+  PAC_MID: { id: 'PAC_MID', name_en: "PAC (Mid Atrium)", name_ka: "PAC (შუა წინაგული)", bpm: 70, desc_en: "Biphasic P.", desc_ka: "ბიფაზური P.", mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.", ectopic: 'mid_atrium', hasP: true, premature: true, qrsWidth: 1, beatShape: PAC_MID_COMPLEX, interval: 40, randomness: 1, noise: 0 },
+  PAC_LOW: { id: 'PAC_LOW', name_en: "PAC (Low Atrium)", name_ka: "PAC (დაბალი წინაგული)", bpm: 70, desc_en: "Inverted P.", desc_ka: "ინვერსიული P.", mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.", ectopic: 'low_atrium', hasP: true, premature: true, qrsWidth: 1, beatShape: PAC_LOW_COMPLEX, interval: 40, randomness: 1, noise: 0 },
+  LBBB: { id: 'LBBB', name_en: "Left Bundle Branch Block", name_ka: "LBBB", bpm: 70, desc_en: "Wide notched R.", desc_ka: "განიერი დეფორმირებული R.", mgmt_en: "Check for STEMI.", mgmt_ka: "STEMI-ს გამორიცხვა.", regular: true, hasP: true, qrsWidth: 2.5, morphology: 'notched', delay: 'left', beatShape: LBBB_COMPLEX, interval: 40, randomness: 2, noise: 0 },
+  RBBB: { id: 'RBBB', name_en: "Right Bundle Branch Block", name_ka: "RBBB", bpm: 70, desc_en: "Rabbit ears.", desc_ka: "კურდღლის ყურები.", mgmt_en: "Benign/Strain.", mgmt_ka: "კეთილთვისებიანი/გადაძაბვა.", regular: true, hasP: true, qrsWidth: 2.5, morphology: 'rsr', delay: 'right', beatShape: RBBB_COMPLEX, interval: 40, randomness: 2, noise: 0 },
+  AV1: { id: 'AV1', name_en: "1st Degree AV Block", name_ka: "AV ბლოკადა I", bpm: 70, desc_en: "Long PR.", desc_ka: "გრძელი PR.", mgmt_en: "Monitor.", mgmt_ka: "მონიტორინგი.", regular: true, hasP: true, prLong: true, qrsWidth: 1, beatShape: AVB1_COMPLEX, interval: 40, randomness: 1, noise: 0 },
+  AV2_1: { id: 'AV2_1', name_en: "2nd Degree AV Block (Type I)", name_ka: "AV ბლოკადა II (ტიპი 1)", bpm: 70, desc_en: "Wenckebach.", desc_ka: "ვენკებახი.", mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.", type: 'wenckebach', hasP: true, qrsWidth: 1, beatShape: null, interval: 35, randomness: 1, noise: 0 },
+  AV2_2: { id: 'AV2_2', name_en: "2nd Degree AV Block (Type II)", name_ka: "AV ბლოკადა II (ტიპი 2)", bpm: 60, desc_en: "Mobitz II.", desc_ka: "მობიტც II.", mgmt_en: "Pacemaker.", mgmt_ka: "პეისმეიკერი.", type: 'mobitz2', hasP: true, qrsWidth: 1, beatShape: null, interval: 35, randomness: 0.5, noise: 0 },
+  AV3: { id: 'AV3', name_en: "3rd Degree AV Block", name_ka: "AV ბლოკადა III", bpm: 40, desc_en: "AV Dissociation.", desc_ka: "AV დისოციაცია.", mgmt_en: "Pacemaker.", mgmt_ka: "პეისმეიკერი.", type: 'complete_block', qrsWidth: 2.5, beatShape: null, interval: 0, randomness: 0, noise: 0 },
+  SSS: { id: 'SSS', name_en: "Sick Sinus Syndrome", name_ka: "სინუსის სისუსტის სინდრომი", bpm: 60, desc_en: "Tachy-Brady.", desc_ka: "ტაქი-ბრადი.", mgmt_en: "Pacemaker.", mgmt_ka: "პეისმეიკერი.", type: 'sss', hasP: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 40, randomness: 2, noise: 0 },
+  LAH: { id: 'LAH', name_en: "Left Atrial Hypertrophy", name_ka: "მარცხენა წინაგულის ჰიპერტროფია", bpm: 70, desc_en: "P-Mitrale.", desc_ka: "P-მიტრალე.", mgmt_en: "Treat cause.", mgmt_ka: "მიზეზის მკურნალობა.", regular: true, hasP: true, pMorph: 'bifid', qrsWidth: 1, delay: 'left_atrium', beatShape: LAH_COMPLEX, interval: 40, randomness: 2, noise: 0 },
+  RAH: { id: 'RAH', name_en: "Right Atrial Hypertrophy", name_ka: "მარჯვენა წინაგულის ჰიპერტროფია", bpm: 70, desc_en: "P-Pulmonale.", desc_ka: "P-პულმონალე.", mgmt_en: "Treat cause.", mgmt_ka: "მიზეზის მკურნალობა.", regular: true, hasP: true, pMorph: 'peaked', qrsWidth: 1, force: 'right_atrium', beatShape: RAH_COMPLEX, interval: 40, randomness: 2, noise: 0 },
+};
+
 // --- LEGACY STATIC ENGINE (For Quiz/Compare Modes) ---
 const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200 }) => {
   const canvasRef = useRef(null);
@@ -410,6 +217,7 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
     const X_STEP = 2; 
     const TOTAL_STEPS = 10000; 
 
+    // FIX: Using correct Rhythm IDs from RHYTHMS object
     if (rhythmId === 'VFIB') {
       for (let i = 0; i < TOTAL_STEPS; i++) {
         const y = Math.sin(i * 0.1) * 10 + Math.sin(i * 0.25 + Math.random()) * 8 + Math.sin(i * 0.5 + Math.random()) * 5 + (Math.random() * 4 - 2); 
@@ -432,7 +240,8 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
       for (let i = 0; i < TOTAL_STEPS; i++) { points.push({ x: i * X_STEP, y: -yBuffer[i] }); }
       return points;
     }
-    if (rhythmId === 'AVB3') {
+    // FIX: Changed from AVB3 to AV3 to match RHYTHMS definition
+    if (rhythmId === 'AV3') {
        const yBuffer = new Array(TOTAL_STEPS).fill(0);
        const P_INTERVAL = 60; 
        for (let i = 0; i < TOTAL_STEPS; i += P_INTERVAL) { P_WAVE_NORMAL.forEach((val, idx) => { if (i + idx < TOTAL_STEPS) yBuffer[i + idx] += val; }); }
@@ -472,8 +281,10 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
       else if (rhythmId === 'PAC_HIGH') { if (pacCycle < 2) currentInterval = 40; else if (pacCycle === 2) currentInterval = 18; else currentInterval = 65; pacCycle = (pacCycle + 1) % 4; }
       else if (rhythmId === 'PAC_MID') { if (pacCycle < 2) { currentBeatShape = NORMAL_COMPLEX; currentInterval = 40; } else if (pacCycle === 2) { currentBeatShape = PAC_MID_COMPLEX; currentInterval = 18; } else { currentBeatShape = NORMAL_COMPLEX; currentInterval = 65; } pacCycle = (pacCycle + 1) % 4; }
       else if (rhythmId === 'PAC_LOW') { if (pacCycle < 2) { currentBeatShape = NORMAL_COMPLEX; currentInterval = 40; } else if (pacCycle === 2) { currentBeatShape = PAC_LOW_COMPLEX; currentInterval = 18; } else { currentBeatShape = NORMAL_COMPLEX; currentInterval = 65; } pacCycle = (pacCycle + 1) % 4; }
-      else if (rhythmId === 'AVB2T2') { if (mobitz2Cycle < 2) { currentBeatShape = NORMAL_COMPLEX; currentInterval = 40; } else { currentBeatShape = [...P_WAVE_NORMAL]; currentInterval = 40 + 24; } mobitz2Cycle = (mobitz2Cycle + 1) % 3; }
-      else if (rhythmId === 'AVB2T1') { if (wenckebachCycle < 3) { const pr = 3 + (wenckebachCycle * 5); currentBeatShape = [...P_WAVE_NORMAL, ...Array(pr).fill(0), ...QRS_T_NORMAL]; currentInterval = 35; } else { currentBeatShape = [...P_WAVE_NORMAL]; currentInterval = 60; } wenckebachCycle = (wenckebachCycle + 1) % 4; }
+      // FIX: Changed AVB2T2 to AV2_2
+      else if (rhythmId === 'AV2_2') { if (mobitz2Cycle < 2) { currentBeatShape = NORMAL_COMPLEX; currentInterval = 40; } else { currentBeatShape = [...P_WAVE_NORMAL]; currentInterval = 40 + 24; } mobitz2Cycle = (mobitz2Cycle + 1) % 3; }
+      // FIX: Changed AVB2T1 to AV2_1
+      else if (rhythmId === 'AV2_1') { if (wenckebachCycle < 3) { const pr = 3 + (wenckebachCycle * 5); currentBeatShape = [...P_WAVE_NORMAL, ...Array(pr).fill(0), ...QRS_T_NORMAL]; currentInterval = 35; } else { currentBeatShape = [...P_WAVE_NORMAL]; currentInterval = 60; } wenckebachCycle = (wenckebachCycle + 1) % 4; }
       else if (rhythmId === 'SSS') { if (sssBeatCounter < 6) currentInterval = 18; else currentInterval = 200; sssBeatCounter = (sssBeatCounter + 1) % 7; }
 
       for (let j = 0; j < currentInterval; j++) {
@@ -502,15 +313,21 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
     for (let x = 0; x < w; x += GRID_SIZE) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
     for (let y = 0; y < h; y += GRID_SIZE) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
     ctx.stroke();
-    
+    ctx.lineWidth = 1; ctx.strokeStyle = '#ff99a8'; ctx.beginPath();
+    for (let x = 0; x < w; x += GRID_SIZE * 5) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+    for (let y = 0; y < h; y += GRID_SIZE * 5) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+    ctx.stroke();
+
     const centerY = h / 2; 
-    ctx.beginPath(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#000000'; 
+    ctx.beginPath(); ctx.lineWidth = 1.8; ctx.strokeStyle = '#000000'; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     const points = dataPoints.current;
     let started = false;
     const drawAll = width !== null; 
     for (let i = 0; i < points.length; i++) {
-      const px = points[i].x - (drawAll ? 0 : xOffset.current);
-      const py = centerY + points[i].y;
+      const p = points[i];
+      if (!p) continue; // Safety check
+      const px = p.x - (drawAll ? 0 : xOffset.current);
+      const py = centerY + p.y;
       if (drawAll || (px >= -20 && px <= w + 20)) {
         if (!started) { ctx.moveTo(px, py); started = true; } else { ctx.lineTo(px, py); }
       }
@@ -518,7 +335,7 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
     ctx.stroke();
     if (isRunning && !drawAll) {
       xOffset.current += SPEED;
-      if (xOffset.current > (points[points.length - 1].x - w)) xOffset.current = 0;
+      if (points.length > 0 && xOffset.current > (points[points.length - 1].x - w)) xOffset.current = 0;
     }
   }, [isRunning, width]);
 
@@ -548,13 +365,13 @@ const CompareCard = ({ rhythmId, t, lang }) => {
   return (
     <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
       <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <span className="font-bold text-slate-700">{RHYTHMS[rhythmId][`name_${lang}`] || rhythmId}</span>
+        <span className="font-bold text-slate-700">{RHYTHMS[rhythmId]?.[`name_${lang}`] || rhythmId}</span>
         <button onClick={() => setIsPaused(!isPaused)} className="p-1 rounded hover:bg-slate-200 transition-colors text-slate-700">
           {isPaused ? <Play size={20} fill="currentColor" /> : <Pause size={20} fill="currentColor" />}
         </button>
       </div>
-      <div className="w-full">
-        <ECGGraphStatic rhythmId={rhythmId} isRunning={!isPaused} />
+      <div className="w-full h-40">
+        <ECGGraphStatic rhythmId={rhythmId} isRunning={!isPaused} height={160} />
       </div>
       <div className="p-4 flex items-center gap-4">
         <p className="text-xs text-slate-500 flex-1">{RHYTHMS[rhythmId][`desc_${lang}`]}</p>
@@ -566,6 +383,7 @@ const CompareCard = ({ rhythmId, t, lang }) => {
 // --- HEART ANATOMY COMPONENT (From Chat) ---
 const HeartAnimation = ({ phase, rhythmKey, meta }) => {
   const rhythm = RHYTHMS[rhythmKey];
+  if (!rhythm) return null; // Safety check
   
   // Colors
   const cBase = "#e2e8f0"; 
@@ -686,6 +504,7 @@ const SimulatorView = ({ rhythmId, t, lang }) => {
   // Re-implementing the getVoltage logic here (Simplified for brevity, full logic from chat)
   const getVoltage = useCallback((time, rhythmKey) => {
     const rhythm = RHYTHMS[rhythmKey];
+    if (!rhythm) return { val: 0, phase: 'rest', meta: {} }; // Safety
     const state = cycleRef.current;
     
     // VFIB
