@@ -749,7 +749,7 @@ export default function CardioLearn() {
   const [compareRhythmA, setCompareRhythmA] = useState('NSR');
   const [compareRhythmB, setCompareRhythmB] = useState('VFIB');
   const [quizState, setQuizState] = useState({ currentAnswer: null, score: 0, total: 0, targetRhythm: null, showResult: false, choices: [] });
-  const [lang, setLang] = useState('en'); 
+  const [lang, setLang] = useState('ka'); 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
 
