@@ -27,7 +27,32 @@ const DEFAULT_CANVAS_WIDTH = 800;
 const DEFAULT_CANVAS_HEIGHT = 200;
 const BASELINE_Y = DEFAULT_CANVAS_HEIGHT / 2;
 
-// --- TRANSLATIONS (Unchanged) ---
+// --- 12-LEAD AXIS MULTIPLIERS ---
+const LEADS = {
+  I: 0.7, 
+  II: 1.0, 
+  III: 0.5,
+  aVR: -0.8, 
+  aVL: 0.3, 
+  aVF: 0.8,
+  V1: -0.6,  
+  V2: -0.3, 
+  V3: 0.4,   // Bulkier transition zone
+  V4: 0.6, 
+  V5: 1.0,   
+  V6: 0.8
+};
+const LEAD_NAMES = Object.keys(LEADS);
+
+// --- CLINICAL 4x3 ECG LAYOUT GROUPS ---
+const LEAD_GROUPS = [
+  ['I', 'II', 'III'],
+  ['aVR', 'aVL', 'aVF'],
+  ['V1', 'V2', 'V3'],
+  ['V4', 'V5', 'V6']
+];
+
+// --- TRANSLATIONS ---
 const TRANSLATIONS = {
   en: {
     appTitle: "CardioLearn",
@@ -88,6 +113,8 @@ const TRANSLATIONS = {
     couplet: "Couplet",
     triplet: "Triplet",
     quadruplet: "Quadruplet",
+    twelveLead: "12-Lead ECG",
+    singleLead: "Single Lead (II)"
   },
   ka: {
     appTitle: "CardioLearn",
@@ -148,6 +175,8 @@ const TRANSLATIONS = {
     couplet: "წყვილი",
     triplet: "ტრიპლეტი",
     quadruplet: "კვადრიპლეტი",
+    twelveLead: "12-განხრიანი ეკგ",
+    singleLead: "ერთი განხრა (II)"
   }
 };
 
@@ -175,7 +204,6 @@ const AVB1_COMPLEX = [...P_WAVE_NORMAL, ...Array(12).fill(0), ...QRS_T_NORMAL];
 const VTACH_COMPLEX = [0, 5, 10, 20, 35, 20, 0, -15, -25, -15, -5];
 const AFIB_COMPLEX = [0, 0, -2, 35, -8, 0, 0, 0.5, 1, 3, 5, 6, 5, 3, 1, 0];
 
-
 // --- RHYTHM DEFINITIONS ---
 const RHYTHMS = {
   NSR: { id: 'NSR', name_en: "Normal Sinus Rhythm", name_ka: "ნორმალური სინუსური რიტმი", bpm: 70, desc_en: "Normal electrical activity.", desc_ka: "ნორმალური ელექტრული აქტივობა.", mgmt_en: "None.", mgmt_ka: "არ მოითხოვს ჩარევას.", regular: true, hasP: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 40, randomness: 2, noise: 0 },
@@ -188,9 +216,9 @@ const RHYTHMS = {
   WPW: { id: 'WPW', name_en: "Wolff-Parkinson-White", name_ka: "ვოლფ-პარკინსონ-უაიტი", bpm: 70, desc_en: "Delta wave.", desc_ka: "დელტა ტალღა.", mgmt_en: "Ablation.", mgmt_ka: "აბლაცია.", regular: true, hasP: true, deltaWave: true, kent: true, qrsWidth: 1.5, beatShape: WPW_COMPLEX, interval: 40, randomness: 2, noise: 0 },
   PVC_MONO: { id: 'PVC_MONO', name_en: "PVC (Monomorphic)", name_ka: "PVC (მონომორფული)", bpm: 70, desc_en: "Wide ectopic beat.", desc_ka: "განიერი ექტოპიური დარტყმა.", mgmt_en: "Monitor.", mgmt_ka: "მონიტორინგი.", ectopic: 'ventricle', hasP: true, premature: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 40, randomness: 1, noise: 0 },
   PVC_POLY: { id: 'PVC_POLY', name_en: "PVC (Polymorphic)", name_ka: "PVC (პოლიმორფული)", bpm: 70, desc_en: "Multifocal PVCs.", desc_ka: "მულტიფოკალური PVC.", mgmt_en: "Check lytes.", mgmt_ka: "ელექტროლიტები.", ectopic: 'ventricle_poly', hasP: true, premature: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 40, randomness: 1, noise: 0 },
-  PAC_HIGH: { id: 'PAC_HIGH', name_en: "PAC (High Atrium)", name_ka: "PAC (წინაგულის ზედა მესამედი)", bpm: 70, desc_en: "Early upright P.", desc_ka: "ადრეული დადებითი P.", mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.", ectopic: 'high_atrium', hasP: true, premature: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 40, randomness: 1, noise: 0 },
-  PAC_MID: { id: 'PAC_MID', name_en: "PAC (Mid Atrium)", name_ka: "PAC (წინაგულის შუა მესამედი)", bpm: 70, desc_en: "Biphasic P.", desc_ka: "ბიფაზური P.", mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.", ectopic: 'mid_atrium', hasP: true, premature: true, qrsWidth: 1, beatShape: PAC_MID_COMPLEX, interval: 40, randomness: 1, noise: 0 },
-  PAC_LOW: { id: 'PAC_LOW', name_en: "PAC (Low Atrium)", name_ka: "PAC (წინაგულის ქვედა მესამედი)", bpm: 70, desc_en: "Inverted P.", desc_ka: "ინვერსიული P.", mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.", ectopic: 'low_atrium', hasP: true, premature: true, qrsWidth: 1, beatShape: PAC_LOW_COMPLEX, interval: 40, randomness: 1, noise: 0 },
+  PAC_HIGH: { id: 'PAC_HIGH', name_en: "PAC (High Atrium)", name_ka: "PAC (მაღალი წინაგული)", bpm: 70, desc_en: "Early upright P.", desc_ka: "ადრეული დადებითი P.", mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.", ectopic: 'high_atrium', hasP: true, premature: true, qrsWidth: 1, beatShape: NORMAL_COMPLEX, interval: 40, randomness: 1, noise: 0 },
+  PAC_MID: { id: 'PAC_MID', name_en: "PAC (Mid Atrium)", name_ka: "PAC (შუა წინაგული)", bpm: 70, desc_en: "Biphasic P.", desc_ka: "ბიფაზური P.", mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.", ectopic: 'mid_atrium', hasP: true, premature: true, qrsWidth: 1, beatShape: PAC_MID_COMPLEX, interval: 40, randomness: 1, noise: 0 },
+  PAC_LOW: { id: 'PAC_LOW', name_en: "PAC (Low Atrium)", name_ka: "PAC (დაბალი წინაგული)", bpm: 70, desc_en: "Inverted P.", desc_ka: "ინვერსიული P.", mgmt_en: "Benign.", mgmt_ka: "კეთილთვისებიანი.", ectopic: 'low_atrium', hasP: true, premature: true, qrsWidth: 1, beatShape: PAC_LOW_COMPLEX, interval: 40, randomness: 1, noise: 0 },
   LBBB: { id: 'LBBB', name_en: "Left Bundle Branch Block", name_ka: "LBBB", bpm: 70, desc_en: "Wide notched R.", desc_ka: "განიერი დეფორმირებული R.", mgmt_en: "Check for STEMI.", mgmt_ka: "STEMI-ს გამორიცხვა.", regular: true, hasP: true, qrsWidth: 2.5, morphology: 'notched', delay: 'left', beatShape: LBBB_COMPLEX, interval: 40, randomness: 2, noise: 0 },
   RBBB: { id: 'RBBB', name_en: "Right Bundle Branch Block", name_ka: "RBBB", bpm: 70, desc_en: "Rabbit ears.", desc_ka: "კურდღლის ყურები.", mgmt_en: "Benign/Strain.", mgmt_ka: "კეთილთვისებიანი/გადაძაბვა.", regular: true, hasP: true, qrsWidth: 2.5, morphology: 'rsr', delay: 'right', beatShape: RBBB_COMPLEX, interval: 40, randomness: 2, noise: 0 },
   AV1: { id: 'AV1', name_en: "1st Degree AV Block", name_ka: "AV ბლოკადა I", bpm: 70, desc_en: "Long PR.", desc_ka: "გრძელი PR.", mgmt_en: "Monitor.", mgmt_ka: "მონიტორინგი.", regular: true, hasP: true, prLong: true, qrsWidth: 1, beatShape: AVB1_COMPLEX, interval: 40, randomness: 1, noise: 0 },
@@ -203,7 +231,7 @@ const RHYTHMS = {
 };
 
 // --- LEGACY STATIC ENGINE (For Quiz/Compare Modes) ---
-const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200 }) => {
+const ECGGraphStatic = ({ rhythmId, isRunning = true, lead = 'II', width = null, height = 200 }) => {
   const canvasRef = useRef(null);
   const dataPoints = useRef([]);
   const xOffset = useRef(0);
@@ -211,13 +239,12 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
   const SPEED = 1.5; 
 
   const generatePoints = useCallback(() => {
-    const rhythm = RHYTHMS[rhythmId] || RHYTHMS.NSR; // Fallback
+    const rhythm = RHYTHMS[rhythmId] || RHYTHMS.NSR; 
     let points = [];
     let x = 0;
     const X_STEP = 2; 
     const TOTAL_STEPS = 10000; 
 
-    // FIX: Using correct Rhythm IDs from RHYTHMS object
     if (rhythmId === 'VFIB') {
       for (let i = 0; i < TOTAL_STEPS; i++) {
         const y = Math.sin(i * 0.1) * 10 + Math.sin(i * 0.25 + Math.random()) * 8 + Math.sin(i * 0.5 + Math.random()) * 5 + (Math.random() * 4 - 2); 
@@ -240,7 +267,7 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
       for (let i = 0; i < TOTAL_STEPS; i++) { points.push({ x: i * X_STEP, y: -yBuffer[i] }); }
       return points;
     }
-    // FIX: Changed from AVB3 to AV3 to match RHYTHMS definition
+    
     if (rhythmId === 'AV3') {
        const yBuffer = new Array(TOTAL_STEPS).fill(0);
        const P_INTERVAL = 60; 
@@ -262,7 +289,6 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
       let currentInterval = rhythm.interval + (Math.random() * rhythm.randomness);
       let currentBeatShape = rhythm.beatShape;
       
-      // Legacy Logic
       if (rhythmId === 'PVC_MONO') {
          if (pvcCycle < 3) { currentBeatShape = NORMAL_COMPLEX; currentInterval = 40; } 
          else if (pvcCycle === 3) { currentBeatShape = PVC_A; currentInterval = 18; } 
@@ -281,9 +307,7 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
       else if (rhythmId === 'PAC_HIGH') { if (pacCycle < 2) currentInterval = 40; else if (pacCycle === 2) currentInterval = 18; else currentInterval = 65; pacCycle = (pacCycle + 1) % 4; }
       else if (rhythmId === 'PAC_MID') { if (pacCycle < 2) { currentBeatShape = NORMAL_COMPLEX; currentInterval = 40; } else if (pacCycle === 2) { currentBeatShape = PAC_MID_COMPLEX; currentInterval = 18; } else { currentBeatShape = NORMAL_COMPLEX; currentInterval = 65; } pacCycle = (pacCycle + 1) % 4; }
       else if (rhythmId === 'PAC_LOW') { if (pacCycle < 2) { currentBeatShape = NORMAL_COMPLEX; currentInterval = 40; } else if (pacCycle === 2) { currentBeatShape = PAC_LOW_COMPLEX; currentInterval = 18; } else { currentBeatShape = NORMAL_COMPLEX; currentInterval = 65; } pacCycle = (pacCycle + 1) % 4; }
-      // FIX: Changed AVB2T2 to AV2_2
       else if (rhythmId === 'AV2_2') { if (mobitz2Cycle < 2) { currentBeatShape = NORMAL_COMPLEX; currentInterval = 40; } else { currentBeatShape = [...P_WAVE_NORMAL]; currentInterval = 40 + 24; } mobitz2Cycle = (mobitz2Cycle + 1) % 3; }
-      // FIX: Changed AVB2T1 to AV2_1
       else if (rhythmId === 'AV2_1') { if (wenckebachCycle < 3) { const pr = 3 + (wenckebachCycle * 5); currentBeatShape = [...P_WAVE_NORMAL, ...Array(pr).fill(0), ...QRS_T_NORMAL]; currentInterval = 35; } else { currentBeatShape = [...P_WAVE_NORMAL]; currentInterval = 60; } wenckebachCycle = (wenckebachCycle + 1) % 4; }
       else if (rhythmId === 'SSS') { if (sssBeatCounter < 6) currentInterval = 18; else currentInterval = 200; sssBeatCounter = (sssBeatCounter + 1) % 7; }
 
@@ -320,14 +344,21 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
 
     const centerY = h / 2; 
     ctx.beginPath(); ctx.lineWidth = 1.8; ctx.strokeStyle = '#000000'; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    
     const points = dataPoints.current;
     let started = false;
     const drawAll = width !== null; 
+    const multiplier = LEADS[lead] || 1; 
+    
+    // NEW: Dynamically scale down the amplitude if the canvas is small
+    const amplitudeScale = height < 200 ? 0.55 : 1.0; 
+
     for (let i = 0; i < points.length; i++) {
       const p = points[i];
-      if (!p) continue; // Safety check
+      if (!p) continue; 
       const px = p.x - (drawAll ? 0 : xOffset.current);
-      const py = centerY + p.y;
+      // NEW: Apply the amplitudeScale to the math
+      const py = centerY + (p.y * multiplier * amplitudeScale);
       if (drawAll || (px >= -20 && px <= w + 20)) {
         if (!started) { ctx.moveTo(px, py); started = true; } else { ctx.lineTo(px, py); }
       }
@@ -337,7 +368,7 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
       xOffset.current += SPEED;
       if (points.length > 0 && xOffset.current > (points[points.length - 1].x - w)) xOffset.current = 0;
     }
-  }, [isRunning, width]);
+  }, [isRunning, width, lead]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -354,52 +385,81 @@ const ECGGraphStatic = ({ rhythmId, isRunning = true, width = null, height = 200
   }, [draw, width, height]);
 
   return (
-    <div className={`relative group ${width ? 'overflow-visible' : 'w-full'}`}> 
-      <canvas ref={canvasRef} className="block cursor-crosshair" style={{ width: width ? `${width}px` : '100%', height: `${height}px` }} />
+    <div className={`relative group ${width ? 'overflow-visible' : 'w-full h-full'}`}> 
+      <canvas ref={canvasRef} className="block cursor-crosshair w-full h-full" style={{ width: width ? `${width}px` : '100%', height: `${height}px` }} />
     </div>
   );
 };
 
-const CompareCard = ({ rhythmId, t, lang }) => {
+// --- MULTI-LEAD GRID WRAPPER (4x3 Columns w/ Vertical Dividers) ---
+const ECGGrid = ({ rhythmId, isRunning, is12Lead, height }) => {
+  const h = is12Lead ? 140 : (height || 250); // Increased from 120 to 140
+
+  if (!is12Lead) {
+    return (
+      <div className="block">
+        <div className="relative bg-white border border-slate-200 rounded overflow-hidden shadow-sm">
+          <ECGGraphStatic rhythmId={rhythmId} isRunning={isRunning} lead="II" height={h} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-100 p-4 relative">
+      {LEAD_GROUPS.map((group, colIdx) => (
+        <div key={colIdx} className="flex flex-col gap-2 relative">
+          {colIdx > 0 && <div className="hidden md:block absolute -left-2 top-0 bottom-0 w-px bg-slate-300" />}
+          
+          {group.map(leadKey => (
+            <div key={leadKey} className="relative bg-white border border-slate-200 rounded overflow-hidden shadow-sm">
+              <div className="absolute top-1 left-2 text-xs font-bold text-slate-800 bg-white/90 px-1 rounded shadow-sm z-10">{leadKey}</div>
+              <ECGGraphStatic rhythmId={rhythmId} isRunning={isRunning} lead={leadKey} height={h} />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const CompareCard = ({ rhythmId, t, lang, is12Lead }) => {
   const [isPaused, setIsPaused] = useState(false);
   return (
-    <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-      <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+    <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden flex flex-col h-full">
+      <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
         <span className="font-bold text-slate-700">{RHYTHMS[rhythmId]?.[`name_${lang}`] || rhythmId}</span>
         <button onClick={() => setIsPaused(!isPaused)} className="p-1 rounded hover:bg-slate-200 transition-colors text-slate-700">
           {isPaused ? <Play size={20} fill="currentColor" /> : <Pause size={20} fill="currentColor" />}
         </button>
       </div>
-      <div className="w-full h-40">
-        <ECGGraphStatic rhythmId={rhythmId} isRunning={!isPaused} height={160} />
+      <div className="w-full flex-1 min-h-[160px]">
+        <ECGGrid rhythmId={rhythmId} isRunning={!isPaused} is12Lead={is12Lead} height={160} />
       </div>
-      <div className="p-4 flex items-center gap-4">
+      <div className="p-4 flex items-center gap-4 shrink-0 bg-white">
         <p className="text-xs text-slate-500 flex-1">{RHYTHMS[rhythmId][`desc_${lang}`]}</p>
       </div>
     </div>
   );
 };
 
-// --- HEART ANATOMY COMPONENT (From Chat) ---
-const HeartAnimation = ({ phase, rhythmKey, meta }) => {
+// --- ANATOMICAL HEART & ELECTRODES COMPONENT ---
+const HeartAnimation = ({ phase, rhythmKey, meta, is12Lead }) => {
   const rhythm = RHYTHMS[rhythmKey];
-  if (!rhythm) return null; // Safety check
+  if (!rhythm) return null; 
   
-  // Colors
-  const cBase = "#e2e8f0"; 
-  const cActive = "#ef4444"; 
+  const cBase = "#cbd5e1"; // Slate-300
+  const cActive = "#ef4444"; // Red-500
   const cElec = "#94a3b8"; 
   const cElecActive = "#fbbf24";
-  const cElecKent = "#10b981"; // Green for Kent
-  const cEctopic = "#f43f5e"; // Pinkish for ectopic
+  const cElecKent = "#10b981"; 
+  const cEctopic = "#f43f5e"; 
 
-  // State extraction
   const isP = phase === 'p_wave';
   const isPR = phase === 'pr_segment';
   const isQRS = phase === 'qrs';
   const isST = phase === 'st_segment';
   
-  // Anatomical Logic
   let saActive = isP;
   if (rhythm.type === 'sss' && meta?.pause) saActive = false;
   if (rhythm.name_en.includes("Fibrillation")) saActive = Math.random() > 0.5;
@@ -443,71 +503,125 @@ const HeartAnimation = ({ phase, rhythmKey, meta }) => {
 
   let bundleColor = (isQRS) ? cElecActive : cElec;
   if (rhythm.type === 'complete_block') bundleColor = (isQRS) ? cEctopic : cElec;
-
   const kentActive = rhythm.kent && (isPR || isQRS);
 
   return (
     <div className="relative w-64 h-64 mx-auto transition-all duration-100">
-      <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-lg">
-        {/* LA */}
-        <path d="M110 40 C 140 40, 160 60, 160 90 C 160 100, 150 110, 110 110 Z" fill={laActive ? (laDelay ? "#ef4444" : cActive) : cBase} stroke="black" strokeWidth="2" className="transition-colors duration-100" />
-        {/* RA */}
-        <path d="M90 40 C 60 40, 40 60, 40 90 C 40 100, 50 110, 90 110 Z" fill={raColor} stroke="black" strokeWidth="2" className="transition-colors duration-100" />
-        {/* Ventricles */}
-        <path d="M40 90 C 40 150, 90 190, 100 195 C 110 190, 160 150, 160 90 L 110 110 L 90 110 Z" fill={vColor} stroke="black" strokeWidth="2" className="transition-colors duration-100" />
+      <svg viewBox="0 0 200 200" className="w-full h-full">
+        {/* Dropshadow filter for depth */}
+        <defs>
+          <filter id="heartShadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15" />
+          </filter>
+        </defs>
+
+        <g filter="url(#heartShadow)">
+            {/* Left Atrium (Anatomical Left, Viewer's Right) */}
+            <path d="M 100 105 L 145 110 C 165 80, 150 40, 100 65 Z" fill={laActive ? (laDelay ? "#ef4444" : cActive) : cBase} stroke="#1e293b" strokeWidth="2.5" strokeLinejoin="round" className="transition-colors duration-100" />
+            
+            {/* Right Atrium (Anatomical Right, Viewer's Left) */}
+            <path d="M 100 105 L 55 110 C 35 80, 50 40, 100 65 Z" fill={raColor} stroke="#1e293b" strokeWidth="2.5" strokeLinejoin="round" className="transition-colors duration-100" />
+            
+            {/* Ventricles (Tilted axis toward anatomical left) */}
+            <path d="M 55 110 C 55 150, 80 180, 125 190 C 145 170, 145 130, 145 110 L 100 105 Z" fill={vColor} stroke="#1e293b" strokeWidth="2.5" strokeLinejoin="round" className="transition-colors duration-100" />
+        </g>
         
-        <circle cx="65" cy="60" r="6" fill={saActive ? cElecActive : cElec} stroke="black" strokeWidth="1" />
-        {isHighPac && <circle cx="75" cy="50" r="4" fill={cEctopic} className="animate-pulse" />}
-        {isMidPac && <circle cx="80" cy="70" r="4" fill={cEctopic} className="animate-pulse" />}
-        {isLowPac && <circle cx="90" cy="80" r="4" fill={cEctopic} className="animate-pulse" />}
-        {isPVC && <circle cx="80" cy="140" r="5" fill={cEctopic} className="animate-pulse" />}
+        {/* Conduction System */}
+        <circle cx="70" cy="65" r="5" fill={saActive ? cElecActive : cElec} stroke="#1e293b" strokeWidth="1.5" />
+        {isHighPac && <circle cx="65" cy="50" r="4" fill={cEctopic} className="animate-pulse" />}
+        {isMidPac && <circle cx="80" cy="80" r="4" fill={cEctopic} className="animate-pulse" />}
+        {isLowPac && <circle cx="95" cy="90" r="4" fill={cEctopic} className="animate-pulse" />}
+        {isPVC && <circle cx="90" cy="150" r="5" fill={cEctopic} className="animate-pulse" />}
 
-        <path d="M65 60 Q 80 70 100 85" fill="none" stroke={saActive || raActive ? cElecActive : cElec} strokeWidth="2" strokeDasharray="2,2" />
-        {rhythm.kent && <path d="M140 80 Q 150 100 140 120" fill="none" stroke={kentActive ? cElecKent : "#cbd5e1"} strokeWidth="4" strokeLinecap="round" />}
+        {/* Internodal Pathways */}
+        <path d="M 70 65 Q 80 85 95 105" fill="none" stroke={saActive || raActive ? cElecActive : cElec} strokeWidth="2" strokeDasharray="3,3" />
+        
+        {/* Kent Bundle (WPW) */}
+        {rhythm.kent && <path d="M 140 90 Q 155 115 140 135" fill="none" stroke={kentActive ? cElecKent : "#cbd5e1"} strokeWidth="4" strokeLinecap="round" />}
 
-        <circle cx="100" cy="85" r="7" fill={avColor} stroke="black" strokeWidth="1" />
-        {showX && <text x="94" y="90" fill="black" fontSize="12" fontWeight="bold">X</text>}
-        {showPermX && <text x="92" y="90" fill="red" fontSize="14" fontWeight="bold">XX</text>}
+        {/* AV Node */}
+        <circle cx="95" cy="105" r="6" fill={avColor} stroke="#1e293b" strokeWidth="1.5" />
+        {showX && <text x="91" y="109" fill="black" fontSize="10" fontWeight="bold">X</text>}
+        {showPermX && <text x="89" y="110" fill="red" fontSize="12" fontWeight="bold">XX</text>}
 
-        <path d="M100 90 L 100 120" fill="none" stroke={bundleColor} strokeWidth="3" />
-        <path d="M100 120 L 130 150" fill="none" stroke={bundleColor} strokeWidth={rhythm.delay === 'left' ? 1 : 3} strokeDasharray={rhythm.delay === 'left' ? "2,2" : "0"} />
-        <path d="M100 120 L 70 150" fill="none" stroke={bundleColor} strokeWidth={rhythm.delay === 'right' ? 1 : 3} strokeDasharray={rhythm.delay === 'right' ? "2,2" : "0"} />
+        {/* Bundle of His & Bundle Branches */}
+        <path d="M 95 105 L 105 125" fill="none" stroke={bundleColor} strokeWidth="3" />
+        <path d="M 105 125 C 110 145, 120 165, 125 175" fill="none" stroke={bundleColor} strokeWidth={rhythm.delay === 'left' ? 1 : 3} strokeDasharray={rhythm.delay === 'left' ? "2,2" : "0"} />
+        <path d="M 105 125 C 90 145, 85 165, 90 175" fill="none" stroke={bundleColor} strokeWidth={rhythm.delay === 'right' ? 1 : 3} strokeDasharray={rhythm.delay === 'right' ? "2,2" : "0"} />
+
+        {/* --- 12-LEAD ELECTRODE OVERLAY --- */}
+        {is12Lead && (
+          <g className="electrodes transition-opacity duration-500 opacity-90">
+             {/* Chest Leads (V1-V6) mapping over the anatomical heart surface */}
+             <circle cx="80" cy="115" r="5" fill="white" stroke="#ef4444" strokeWidth="2.5" className="drop-shadow-md" />
+             <text x="80" y="104" fontSize="9" fill="#1e293b" textAnchor="middle" fontWeight="bold">V1</text>
+             
+             <circle cx="105" cy="115" r="5" fill="white" stroke="#eab308" strokeWidth="2.5" className="drop-shadow-md" />
+             <text x="105" y="104" fontSize="9" fill="#1e293b" textAnchor="middle" fontWeight="bold">V2</text>
+             
+             <circle cx="118" cy="128" r="5" fill="white" stroke="#22c55e" strokeWidth="2.5" className="drop-shadow-md" />
+             <text x="130" y="131" fontSize="9" fill="#1e293b" textAnchor="middle" fontWeight="bold">V3</text>
+             
+             <circle cx="130" cy="145" r="5" fill="white" stroke="#3b82f6" strokeWidth="2.5" className="drop-shadow-md" />
+             <text x="142" y="148" fontSize="9" fill="#1e293b" textAnchor="middle" fontWeight="bold">V4</text>
+             
+             <circle cx="145" cy="150" r="5" fill="white" stroke="#f97316" strokeWidth="2.5" className="drop-shadow-md" />
+             <text x="157" y="153" fontSize="9" fill="#1e293b" textAnchor="middle" fontWeight="bold">V5</text>
+             
+             <circle cx="160" cy="145" r="5" fill="white" stroke="#a855f7" strokeWidth="2.5" className="drop-shadow-md" />
+             <text x="172" y="148" fontSize="9" fill="#1e293b" textAnchor="middle" fontWeight="bold">V6</text>
+
+             {/* Limb Leads */}
+             <circle cx="20" cy="30" r="4" fill="white" stroke="#ef4444" strokeWidth="2" />
+             <text x="20" y="20" fontSize="10" fill="#64748b" textAnchor="middle" fontWeight="bold">RA</text>
+
+             <circle cx="180" cy="30" r="4" fill="white" stroke="#eab308" strokeWidth="2" />
+             <text x="180" y="20" fontSize="10" fill="#64748b" textAnchor="middle" fontWeight="bold">LA</text>
+
+             <circle cx="180" cy="180" r="4" fill="white" stroke="#22c55e" strokeWidth="2" />
+             <text x="180" y="195" fontSize="10" fill="#64748b" textAnchor="middle" fontWeight="bold">LL</text>
+             
+             <circle cx="20" cy="180" r="4" fill="white" stroke="#0f172a" strokeWidth="2" />
+             <text x="20" y="195" fontSize="10" fill="#64748b" textAnchor="middle" fontWeight="bold">RL</text>
+          </g>
+        )}
       </svg>
-      {rhythm.kent && <div className="absolute top-16 right-4 text-[10px] font-bold text-emerald-600 bg-white/80 px-1 rounded">Kent Bundle</div>}
-      {rhythm.type === 'complete_block' && <div className="absolute top-20 left-[40%] text-[10px] font-bold text-red-600 bg-white/80 px-1 rounded">AV DISSOCIATION</div>}
+      {rhythm.kent && <div className="absolute top-16 right-2 text-[10px] font-bold text-emerald-600 bg-white/90 px-1.5 py-0.5 rounded shadow-sm">Kent Bundle</div>}
+      {rhythm.type === 'complete_block' && <div className="absolute top-20 left-[35%] text-[10px] font-bold text-red-600 bg-white/90 px-1.5 py-0.5 rounded shadow-sm">AV DISSOCIATION</div>}
     </div>
   );
 };
 
-// --- DYNAMIC SIMULATOR COMPONENT (From Chat) ---
-const SimulatorView = ({ rhythmId, t, lang }) => {
-  const canvasRef = useRef(null);
+// --- DYNAMIC SIMULATOR COMPONENT ---
+const SimulatorView = ({ rhythmId, t, lang, is12Lead }) => {
+  const canvasRefs = useRef({}); 
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentPhase, setCurrentPhase] = useState('rest');
   const [metaState, setMetaState] = useState({}); 
   
-  // Settings
   const [paperSpeed, setPaperSpeed] = useState('100'); 
   const [scrollSpeed, setScrollSpeed] = useState(1); 
   const [prematurePattern, setPrematurePattern] = useState('random'); 
   const [prematureGroup, setPrematureGroup] = useState('single'); 
 
-  // Simulation Refs
   const timeRef = useRef(0); 
   const frameCountRef = useRef(0);
-  const lastPointsRef = useRef([]);
+  const lastPointsRef = useRef({});
   const phaseBufferRef = useRef([]); 
   const cycleRef = useRef({ start: 0, duration: 60, pTimer: 0, wenckebachCount: 0, beatCount: 0, beatsToSkipInPattern: 0, isPrematureBeat: false, droppedBeat: false, pvcMorph: 0.5 });
 
   const gaussian = (t, peak, center, width) => peak * Math.exp(-0.5 * Math.pow((t - center) / width, 2));
 
-  // Re-implementing the getVoltage logic here (Simplified for brevity, full logic from chat)
+  // Initialize Point Buffers for all 12 leads
+  useEffect(() => {
+    LEAD_NAMES.forEach(lead => lastPointsRef.current[lead] = []);
+  }, []);
+
   const getVoltage = useCallback((time, rhythmKey) => {
     const rhythm = RHYTHMS[rhythmKey];
-    if (!rhythm) return { val: 0, phase: 'rest', meta: {} }; // Safety
+    if (!rhythm) return { val: 0, phase: 'rest', meta: {} }; 
     const state = cycleRef.current;
     
-    // VFIB
     if (rhythmKey === 'VFIB') {
         const noise = (Math.random() - 0.5) * 15;
         const chaos = Math.sin(time * 0.2) * 20 + Math.sin(time * 0.5) * 10;
@@ -515,7 +629,6 @@ const SimulatorView = ({ rhythmId, t, lang }) => {
     }
 
     let currentBPM = rhythm.bpm;
-    // Beat Reset
     if (time - state.start > state.duration) {
         state.start = time;
         state.droppedBeat = false; 
@@ -554,7 +667,6 @@ const SimulatorView = ({ rhythmId, t, lang }) => {
     
     const isPVCBeat = state.isPrematureBeat && rhythmKey.includes('PVC');
     
-    // P-Wave
     if (rhythm.type === 'complete_block') {
         state.pTimer += 0.125; const pCycle = 60; const pProg = (state.pTimer % pCycle) / pCycle;
         if (pProg > 0.1 && pProg < 0.25) pVoltage -= gaussian(pProg, 15, 0.18, 0.02);
@@ -578,7 +690,6 @@ const SimulatorView = ({ rhythmId, t, lang }) => {
     }
     if (rhythm.flutter) pVoltage += Math.sin(time * 0.25) * 10;
 
-    // QRS
     let qrsOffset = 0;
     if (rhythm.prLong) qrsOffset = 0.05; 
     if (rhythm.type === 'wenckebach') qrsOffset = state.wenckebachCount * 0.04;
@@ -603,7 +714,6 @@ const SimulatorView = ({ rhythmId, t, lang }) => {
         }
     }
 
-    // ST/T
     if (!state.droppedBeat) {
         if (progress >= qrsCenter + 0.1 && progress < 0.55 + qrsOffset) phase = 'st_segment';
         if (progress > 0.5 + qrsOffset && progress < 0.75 + qrsOffset) {
@@ -619,50 +729,76 @@ const SimulatorView = ({ rhythmId, t, lang }) => {
     return { val: voltage + noise, phase, meta: { isPremature: state.isPrematureBeat, wenckCount: state.wenckebachCount, dropped: state.droppedBeat, pProgress: (progress - 0.1)/0.15, pause: (time - state.start > state.duration + 50) } };
   }, [prematurePattern, prematureGroup]);
 
-  // Render Loop
+  // Master Render Loop for all active leads
   useEffect(() => {
-    const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
-    const width = DEFAULT_CANVAS_WIDTH; const height = DEFAULT_CANVAS_HEIGHT;
-    if (timeRef.current === 0) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, width, height); }
-    ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+    const width = DEFAULT_CANVAS_WIDTH; 
+    const height = is12Lead ? 140 : 250; // Increased from 120 to 140 
+    
+    if (timeRef.current === 0) { 
+      LEAD_NAMES.forEach(lead => {
+        const ctx = canvasRefs.current[lead]?.getContext('2d');
+        if(ctx) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, width, height); }
+      });
+    }
+
     let animId;
     const render = () => {
         if (!isPlaying) return;
         frameCountRef.current++;
         if (frameCountRef.current % scrollSpeed !== 0) { animId = requestAnimationFrame(render); return; }
+        
         let timeStep = 0.125; if (paperSpeed === '50') timeStep = 0.25; if (paperSpeed === '25') timeStep = 0.5;
         timeRef.current += timeStep;
-        const { val, phase, meta } = getVoltage(timeRef.current, rhythmId);
-        const y = (height / 2) + val;
         
-        // Sync Buffer
+        // Calculate Base Voltage once per frame
+        const { val, phase, meta } = getVoltage(timeRef.current, rhythmId);
+        
+        // Sync Buffers for UI
         phaseBufferRef.current.push({ phase, meta });
         if (phaseBufferRef.current.length > width + 50) phaseBufferRef.current.shift();
-        const delayOffset = width / 2;
-        const delayedData = phaseBufferRef.current[phaseBufferRef.current.length - 1 - delayOffset];
+        const delayedData = phaseBufferRef.current[phaseBufferRef.current.length - 1 - (width / 2)];
         if (delayedData) { setCurrentPhase(delayedData.phase); setMetaState(delayedData.meta); }
 
-        // Draw
-        ctx.globalCompositeOperation = 'copy'; ctx.drawImage(canvas, -1, 0); ctx.globalCompositeOperation = 'source-over';
-        ctx.fillStyle = '#fff'; ctx.fillRect(width - 1, 0, 1, height);
-        const lastY = lastPointsRef.current.length > 0 ? lastPointsRef.current[lastPointsRef.current.length - 1] : (height / 2);
-        ctx.beginPath(); ctx.moveTo(width - 2, lastY); ctx.lineTo(width - 1, y);
-        ctx.strokeStyle = '#ffdede'; ctx.lineWidth = 1; ctx.stroke(); 
-        ctx.strokeStyle = '#000000'; ctx.lineWidth = 2; ctx.stroke();
-        lastPointsRef.current.push(y); if (lastPointsRef.current.length > 10) lastPointsRef.current.shift();
+        // Render to all active Canvas elements
+        const activeLeads = is12Lead ? LEAD_NAMES : ['II'];
+        
+        activeLeads.forEach(leadKey => {
+            const canvas = canvasRefs.current[leadKey];
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            // Apply projection amplitude multiplier AND 12-lead scale factor
+            const leadMultiplier = LEADS[leadKey] || 1.0;
+            const scaleFactor = is12Lead ? 0.55 : 1.0; // Prevent canvas clipping
+            const y = (height / 2) + (val * leadMultiplier * scaleFactor);
+            
+            ctx.globalCompositeOperation = 'copy'; ctx.drawImage(canvas, -1, 0); ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = '#fff'; ctx.fillRect(width - 1, 0, 1, height);
+            
+            const leadPoints = lastPointsRef.current[leadKey];
+            const lastY = leadPoints && leadPoints.length > 0 ? leadPoints[leadPoints.length - 1] : (height / 2);
+            
+            ctx.beginPath(); ctx.moveTo(width - 2, lastY); ctx.lineTo(width - 1, y);
+            ctx.strokeStyle = '#ffdede'; ctx.lineWidth = 1; ctx.stroke(); 
+            ctx.strokeStyle = '#000000'; ctx.lineWidth = 2; ctx.stroke();
+            
+            if(leadPoints) {
+                leadPoints.push(y); 
+                if (leadPoints.length > 10) leadPoints.shift();
+            }
+        });
+        
         animId = requestAnimationFrame(render);
     };
     render();
     return () => cancelAnimationFrame(animId);
-  }, [isPlaying, rhythmId, getVoltage, paperSpeed, scrollSpeed]);
+  }, [isPlaying, rhythmId, getVoltage, paperSpeed, scrollSpeed, is12Lead]);
 
-  // Reset on rhythm change
   useEffect(() => {
       cycleRef.current = { start: timeRef.current, duration: 60, pTimer:0, wenckebachCount:0, beatCount: 0, beatsToSkipInPattern: 0, isPrematureBeat: false, droppedBeat: false, pvcMorph: 0.5 };
       phaseBufferRef.current = []; setMetaState({}); setCurrentPhase('rest');
   }, [rhythmId]);
 
-  // Safe rendering helper
   const renderPhase = (key) => {
       if (!key || typeof t[key] !== 'string') return '';
       return t[key];
@@ -691,20 +827,50 @@ const SimulatorView = ({ rhythmId, t, lang }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-slate-50 p-6">
-            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
+            <div className="w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3 space-y-6">
                     <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden relative">
                         <div className="bg-slate-900 text-green-400 px-4 py-2 flex justify-between font-mono text-sm">
-                            <span>{t.leadII}</span>
+                            <span>{is12Lead ? t.twelveLead : t.leadII}</span>
                             <span>{RHYTHMS[rhythmId].bpm} BPM</span>
                             <span>{paperSpeed}mm/s</span>
                         </div>
-                        <div className="relative h-[250px] bg-white">
-                            <canvas ref={canvasRef} width={DEFAULT_CANVAS_WIDTH} height={250} className="w-full h-full cursor-crosshair" />
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-12 bg-yellow-400/20 border-x-2 border-yellow-500 pointer-events-none flex flex-col items-center justify-start pt-2">
-                                <span className="text-[10px] font-bold text-yellow-700 bg-yellow-100 px-1 rounded whitespace-nowrap">{t.liveView}</span>
-                            </div>
+                        
+                        {/* 12-Lead Dynamic Layout Rendering */}
+                        <div className={`grid ${is12Lead ? 'grid-cols-2 md:grid-cols-4 gap-4 bg-slate-100 p-4' : 'grid-cols-1'} bg-white relative`}>
+                            {is12Lead ? (
+                                LEAD_GROUPS.map((group, colIdx) => (
+                                    <div key={colIdx} className="flex flex-col gap-2 relative">
+                                        {/* Vertical dividers right between the columns */}
+                                        {colIdx > 0 && <div className="hidden md:block absolute -left-2 top-0 bottom-0 w-px bg-slate-300" />}
+                                        
+                                        {group.map(leadKey => (
+                                            // Changed h-[120px] to h-[140px]
+                                            <div key={leadKey} className="relative bg-white border border-slate-200 rounded h-[140px] overflow-hidden shadow-sm">
+                                                <div className="absolute top-1 left-2 text-xs font-bold text-slate-800 bg-white/90 px-1 rounded shadow-sm z-10">{leadKey}</div>
+                                                {/* Changed height={120} to height={140} */}
+                                                <canvas ref={el => canvasRefs.current[leadKey] = el} width={DEFAULT_CANVAS_WIDTH} height={140} className="w-full h-full cursor-crosshair" />
+                                            </div>
+                                        ))}
+
+                                        {/* Live View Cursor rendered INSIDE each column mapping */}
+                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-12 bg-yellow-400/20 border-x-2 border-yellow-500 pointer-events-none flex flex-col items-center justify-start pt-2 z-20">
+                                            {/* We only render the text on the first column to avoid clutter, but the bar spans every column */}
+                                            {colIdx === 0 && <span className="text-[10px] font-bold text-yellow-700 bg-yellow-100 px-1 rounded whitespace-nowrap shadow-sm">{t.liveView}</span>}
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="relative bg-white border border-slate-200 rounded h-[250px] overflow-hidden">
+                                    <canvas ref={el => canvasRefs.current['II'] = el} width={DEFAULT_CANVAS_WIDTH} height={250} className="w-full h-full cursor-crosshair" />
+                                    {/* Live View Cursor for Single Lead */}
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-12 bg-yellow-400/20 border-x-2 border-yellow-500 pointer-events-none flex flex-col items-center justify-start pt-2 z-20">
+                                        <span className="text-[10px] font-bold text-yellow-700 bg-yellow-100 px-1 rounded whitespace-nowrap">{t.liveView}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+
                     </div>
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                         <h3 className="text-lg font-bold text-blue-900 mb-4">{t.pathophysiology}</h3>
@@ -720,7 +886,8 @@ const SimulatorView = ({ rhythmId, t, lang }) => {
                         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 border-b pb-2">
                             <Heart className="text-red-500" /> Anatomical Sync
                         </h3>
-                        <HeartAnimation phase={currentPhase} rhythmKey={rhythmId} meta={metaState} />
+                        {/* Pass the is12Lead prop to the Heart Animation */}
+                        <HeartAnimation phase={currentPhase} rhythmKey={rhythmId} meta={metaState} is12Lead={is12Lead} />
                         
                         <div className="mt-6 space-y-3">
                             <div className="flex justify-between items-center text-sm border-b pb-2">
@@ -749,9 +916,10 @@ export default function CardioLearn() {
   const [compareRhythmA, setCompareRhythmA] = useState('NSR');
   const [compareRhythmB, setCompareRhythmB] = useState('VFIB');
   const [quizState, setQuizState] = useState({ currentAnswer: null, score: 0, total: 0, targetRhythm: null, showResult: false, choices: [] });
-  const [lang, setLang] = useState('ka'); 
+  const [lang, setLang] = useState('en'); 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [is12Lead, setIs12Lead] = useState(false); 
 
   const t = TRANSLATIONS[lang]; 
 
@@ -797,16 +965,30 @@ export default function CardioLearn() {
             <p className="text-xs text-slate-400">{t.edition}</p>
           </div>
         </div>
+        
+        {/* Universal 12-Lead Toggle */}
+        <div className="px-4 py-4 border-b border-slate-700">
+          <button 
+            onClick={() => setIs12Lead(!is12Lead)} 
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-bold transition-all shadow-sm ${is12Lead ? 'bg-indigo-600 text-white shadow-indigo-900/50' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+          >
+            <div className="flex items-center gap-2">
+              <Layers size={18} />
+              <span>{is12Lead ? t.twelveLead : t.singleLead}</span>
+            </div>
+            <div className={`w-10 h-5 rounded-full p-0.5 transition-colors ${is12Lead ? 'bg-indigo-400' : 'bg-slate-600'}`}>
+               <div className={`w-4 h-4 bg-white rounded-full transition-transform ${is12Lead ? 'translate-x-5' : 'translate-x-0'}`} />
+            </div>
+          </button>
+        </div>
+
         <nav className="flex-1 p-4 space-y-2">
           <button onClick={() => setView('learn')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${view === 'learn' ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>
             <BookOpen size={20} /> <span>{t.studyMode}</span>
           </button>
-          
-          {/* NEW SIMULATOR TAB */}
           <button onClick={() => setView('simulator')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${view === 'simulator' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>
             <Activity size={20} /> <span>{t.simulatorMode}</span>
           </button>
-
           <button onClick={() => setView('quiz')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${view === 'quiz' ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>
             <Brain size={20} /> <span>{t.quizMode}</span>
           </button>
@@ -819,7 +1001,7 @@ export default function CardioLearn() {
             </button>
           )}
         </nav>
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-4">
            <button onClick={() => setLang(l => l === 'en' ? 'ka' : 'en')} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors text-sm">
              {lang === 'en' ? '🇺🇸 English' : '🇬🇪 ქართული'}
            </button>
@@ -829,7 +1011,7 @@ export default function CardioLearn() {
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col h-[100dvh] overflow-hidden">
         
-        {/* 1. STUDY MODE (Static Engine) */}
+        {/* 1. STUDY MODE */}
         {view === 'learn' && (
           <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
             <div className="w-full md:w-64 bg-white border-r border-slate-200 overflow-y-auto shrink-0">
@@ -842,7 +1024,7 @@ export default function CardioLearn() {
               ))}
             </div>
             <div className="flex-1 overflow-y-auto bg-white pb-20 md:pb-0">
-              <div className="sticky top-0 z-10 bg-white shadow-sm">
+              <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-slate-200">
                 <div className="px-6 py-4 flex justify-between items-end">
                   <div className="flex items-center gap-4">
                     <div>
@@ -853,10 +1035,10 @@ export default function CardioLearn() {
                       {isPaused ? <Play size={24} fill="currentColor" /> : <Pause size={24} fill="currentColor" />}
                     </button>
                   </div>
-                  <div className="text-xs text-slate-400 font-mono">{t.leadII}</div>
+                  <div className="text-xs text-slate-400 font-mono font-bold">{is12Lead ? t.twelveLead : t.leadII}</div>
                 </div>
-                {/* Legacy Static Graph for Learn Mode */}
-                <ECGGraphStatic rhythmId={activeRhythm} isRunning={!isPaused} />
+                {/* Dynamically render 12-lead grid or single lead */}
+                <ECGGrid rhythmId={activeRhythm} isRunning={!isPaused} is12Lead={is12Lead} />
               </div>
               <div className="p-6 max-w-4xl mx-auto space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -888,10 +1070,9 @@ export default function CardioLearn() {
           </div>
         )}
 
-        {/* 2. NEW SIMULATOR MODE (Dynamic Gaussian Engine + Anatomy) */}
+        {/* 2. DYNAMIC SIMULATOR MODE */}
         {view === 'simulator' && (
           <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
-             {/* Reuse the same selector sidebar */}
              <div className="w-full md:w-64 bg-white border-r border-slate-200 overflow-y-auto shrink-0">
               <div className="p-4 bg-slate-100 border-b border-slate-200 font-semibold text-slate-600">{t.selectCondition}</div>
               {Object.values(RHYTHMS).map((r) => (
@@ -902,7 +1083,7 @@ export default function CardioLearn() {
               ))}
             </div>
             <div className="flex-1 overflow-hidden">
-               <SimulatorView rhythmId={activeRhythm} t={t} lang={lang} />
+               <SimulatorView rhythmId={activeRhythm} t={t} lang={lang} is12Lead={is12Lead} />
             </div>
           </div>
         )}
@@ -910,7 +1091,7 @@ export default function CardioLearn() {
         {/* 3. QUIZ MODE */}
         {view === 'quiz' && (
           <div className="flex-1 bg-slate-50 flex flex-col items-center justify-start pt-8 overflow-y-auto pb-20 md:pb-0">
-            <div className="w-full max-w-4xl px-4">
+            <div className="w-full px-4 md:px-8 xl:px-12">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h2 className="text-3xl font-bold text-slate-800">{t.spotDiagnosis}</h2>
@@ -925,6 +1106,7 @@ export default function CardioLearn() {
               <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200 mb-8">
                 <div className="bg-slate-900 text-green-400 px-4 py-2 flex justify-between items-center font-mono text-xs">
                   <div className="flex items-center gap-4">
+                    <span className="font-bold">{is12Lead ? t.twelveLead : t.leadII}</span>
                     <span>{t.hr}: {quizState.targetRhythm ? RHYTHMS[quizState.targetRhythm].bpm : '---'}</span>
                     <button onClick={() => setIsPaused(!isPaused)} className="p-1 rounded hover:bg-slate-800 transition-colors text-green-400">
                       {isPaused ? <Play size={14} fill="currentColor" /> : <Pause size={14} fill="currentColor" />}
@@ -932,8 +1114,7 @@ export default function CardioLearn() {
                   </div>
                   <span>25mm/s</span>
                 </div>
-                {/* Use Static Graph for Quiz for stability */}
-                {quizState.targetRhythm && <ECGGraphStatic rhythmId={quizState.targetRhythm} isRunning={!quizState.showResult && !isPaused} />}
+                {quizState.targetRhythm && <ECGGrid rhythmId={quizState.targetRhythm} isRunning={!quizState.showResult && !isPaused} is12Lead={is12Lead} />}
                 <div className="bg-slate-100 px-4 py-2 text-xs text-center text-slate-500">{t.analyze}</div>
               </div>
               {!quizState.showResult ? (
@@ -963,15 +1144,15 @@ export default function CardioLearn() {
           </div>
         )}
 
-        {/* 4. COMPARE MODE (Legacy Static) */}
+        {/* 4. COMPARE MODE */}
         {view === 'compare' && (
           <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50">
-            <div className="p-6 max-w-5xl mx-auto w-full flex-1 overflow-y-auto pb-20">
+            <div className="p-6 w-full flex-1 overflow-y-auto pb-20">
               <div className="mb-6">
                 <h2 className="text-3xl font-bold text-slate-800">{t.compareTitle}</h2>
                 <p className="text-slate-500">{t.compareInstr}</p>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
                    <div className="flex justify-between items-center px-1">
                       <span className="font-bold text-slate-700">{t.rhythmA}</span>
@@ -979,7 +1160,7 @@ export default function CardioLearn() {
                         {Object.values(RHYTHMS).map(r => (<option key={r.id} value={r.id}>{r[`name_${lang}`]}</option>))}
                       </select>
                    </div>
-                   <CompareCard rhythmId={compareRhythmA} t={t} lang={lang} />
+                   <CompareCard rhythmId={compareRhythmA} t={t} lang={lang} is12Lead={is12Lead} />
                 </div>
                 <div className="flex flex-col gap-2">
                    <div className="flex justify-between items-center px-1">
@@ -988,13 +1169,13 @@ export default function CardioLearn() {
                         {Object.values(RHYTHMS).map(r => (<option key={r.id} value={r.id}>{r[`name_${lang}`]}</option>))}
                       </select>
                    </div>
-                   <CompareCard rhythmId={compareRhythmB} t={t} lang={lang} />
+                   <CompareCard rhythmId={compareRhythmB} t={t} lang={lang} is12Lead={is12Lead} />
                 </div>
-                <div className="lg:col-span-2 mt-4">
+                <div className="xl:col-span-2 mt-4">
                    <div className="flex justify-between items-center px-1 mb-2">
                       <span className="font-bold text-slate-500 uppercase tracking-wide text-sm">{t.baseline}</span>
                    </div>
-                   <CompareCard rhythmId="NSR" t={t} lang={lang} />
+                   <CompareCard rhythmId="NSR" t={t} lang={lang} is12Lead={is12Lead} />
                 </div>
               </div>
             </div>
